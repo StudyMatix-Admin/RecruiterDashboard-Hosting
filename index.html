@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recruiter Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      max-width: 800px;
+      background: #f8f9fa;
+    }
+    h2 {
+      color: #333;
+    }
+    form {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      font-weight: bold;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .test-list {
+      margin-top: 20px;
+    }
+    .test-item {
+      padding: 15px;
+      border: 1px solid #ddd;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .collapsible {
+      margin-top: 10px;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+    }
+    details {
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    summary {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .question {
+      margin-left: 20px;
+      padding: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Create a Test for a Candidate</h2>
+  <form id="testForm">
+    <label>Candidate Email</label>
+    <input type="email" id="email" required />
+
+    <label>Subject</label>
+    <input type="text" id="subject" required />
+
+    <label>Number of Questions</label>
+    <input type="number" id="numQuestions" min="1" required />
+
+    <label>Years of Experience Required</label>
+    <input type="number" id="experienceYears" min="0" required />
+
+    <label>Test Duration (minutes)</label>
+    <input type="number" id="timeMinutes" min="1" required />
+
+    <button type="submit">Generate Test</button>
+  </form>
+
+  <h2>Browse All Created Tests</h2>
+  <button id="fetchTestsBtn">Fetch All Tests</button>
+  <div class="test-list" id="testList"></div>
+
+  <script>
+    const baseUrl = "https://studymatix-chat-app-429296191342.asia-south1.run.app";
+
+    // Handle test creation
+    document.getElementById('testForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const data = {
+        email: document.getElementById('email').value,
+        subject: document.getElementById('subject').value,
+        numQuestions: parseInt(document.getElementById('numQuestions').value),
+        experienceYears: parseInt(document.getElementById('experienceYears').value),
+        timeMinutes: parseInt(document.getElementById('timeMinutes').value)
+      };
+
+      const response = await fetch(`${baseUrl}/generatetest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert("✅ Test generated successfully!");
+        document.getElementById('testForm').reset();
+      } else {
+        alert("❌ Failed to generate test.");
+      }
+    });
+
+    // Handle fetching all tests
+    document.getElementById('fetchTestsBtn').addEventListener('click', async function() {
+      const listDiv = document.getElementById('testList');
+      listDiv.innerHTML = "Loading tests...";
+
+      try {
+        const response = await fetch(`${baseUrl}/getalltests`);
+        const tests = await response.json();
+
+        listDiv.innerHTML = "";
+
+        if (!Array.isArray(tests) || tests.length === 0) {
+          listDiv.innerHTML = "<p>No tests found.</p>";
+          return;
+        }
+
+        tests.forEach((test, index) => {
+          const div = document.createElement("div");
+          div.className = "test-item";
+
+          const createdAt = test.createdAt ? new Date(test.createdAt).toLocaleString() : "N/A";
+
+          div.innerHTML = `
+            <strong>Candidate Email:</strong> ${test.email || "N/A"}<br/>
+            <strong>Subject:</strong> ${test.subject}<br/>
+            <strong>Questions:</strong> ${test.numQuestions}<br/>
+            <strong>Experience Required:</strong> ${test.experienceYears} years<br/>
+            <strong>Duration:</strong> ${test.timeMinutes} mins<br/>
+            <strong>Status:</strong> ${test.status || "Pending"}<br/>
+            <strong>Created At:</strong> ${createdAt}
+          `;
+
+          if (Array.isArray(test.questions) && test.questions.length > 0) {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = "View Questions";
+            details.appendChild(summary);
+
+            test.questions.forEach((q, i) => {
+              const qDiv = document.createElement("div");
+              qDiv.className = "question";
+              qDiv.textContent = `${i + 1}. ${q.question || q}`;
+              details.appendChild(qDiv);
+            });
+
+            const collapsible = document.createElement("div");
+            collapsible.className = "collapsible";
+            collapsible.appendChild(details);
+            div.appendChild(collapsible);
+          }
+
+          listDiv.appendChild(div);
+        });
+      } catch (err) {
+        listDiv.innerHTML = "<p>Error fetching tests.</p>";
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+</html>
