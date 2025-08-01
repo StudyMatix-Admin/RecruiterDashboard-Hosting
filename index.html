@@ -197,7 +197,12 @@
                 const qDiv = document.createElement("div");
                 qDiv.className = "question";
 
-                const userAnswer = test?.TestAnswers?.[0]?.answers?.[`q${i}`] ?? "Not answered";
+                // Sort TestAnswers array by submittedAt descending to get the latest attempt
+                const latestAttempt = Array.isArray(test?.TestAnswers)
+                  ? [...test.TestAnswers].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0]
+                  : null;
+
+                const userAnswer = latestAttempt?.answers?.[`q${i}`] ?? "Not answered";
                 const isCorrect = userAnswer === q.answer;
                 const evaluationIcon = isCorrect ? "✅" : "❌";
 
