@@ -154,23 +154,48 @@
           `;
 
           if (Array.isArray(test.questions) && test.questions.length > 0) {
-            const details = document.createElement("details");
-            const summary = document.createElement("summary");
-            summary.textContent = "View Questions";
-            details.appendChild(summary);
+              console.log("Test object:", test);
+              console.log("Top-level score:", test.score);
+              console.log("TestAnswers[0]?.score:", test?.TestAnswers?.[0]?.score);
+              const details = document.createElement("details");
+              const summary = document.createElement("summary");
+              const rawScore = test.score ?? test?.TestAnswers?.[0]?.score ?? 0;
+              const testScore = parseInt(rawScore);
+              summary.textContent = `📘 View Questions & Answers (Score: ${testScore}/${test.questions.length})`;
 
-            test.questions.forEach((q, i) => {
-              const qDiv = document.createElement("div");
-              qDiv.className = "question";
-              qDiv.textContent = `${i + 1}. ${q.question || q}`;
-              details.appendChild(qDiv);
-            });
+              details.appendChild(summary);
 
-            const collapsible = document.createElement("div");
-            collapsible.className = "collapsible";
-            collapsible.appendChild(details);
-            div.appendChild(collapsible);
-          }
+              test.questions.forEach((q, i) => {
+                const qDiv = document.createElement("div");
+                qDiv.className = "question";
+
+                const userAnswer = test?.TestAnswers?.[0]?.answers?.[`q${i}`] ?? "Not answered";
+                const isCorrect = userAnswer === q.answer;
+                const evaluationIcon = isCorrect ? "✅" : "❌";
+
+                qDiv.innerHTML = `
+                  <div style="margin-bottom: 8px;">
+                    <strong>Q${i + 1}:</strong> ${q.question}
+                    <pre style="background:#f0f0f0; padding:8px; overflow:auto;">${q.code || ""}</pre>
+                    <ul style="margin: 4px 0 4px 20px; padding:0;">
+                      ${Object.entries(q.options).map(([key, val]) => {
+                        const bold = key === q.answer ? 'font-weight: bold;' : '';
+                        return `<li style="${bold}">${key}: ${val}</li>`;
+                      }).join("")}
+                    </ul>
+                    <div><strong>Correct Answer:</strong> ${q.answer}</div>
+                    <div><strong>Candidate Answer:</strong> ${userAnswer} ${evaluationIcon}</div>
+                    ${q.explanation ? `<div><details><summary>Explanation</summary><p>${q.explanation}</p></details></div>` : ""}
+                  </div>
+                `;
+                details.appendChild(qDiv);
+              });
+
+              const collapsible = document.createElement("div");
+              collapsible.className = "collapsible";
+              collapsible.appendChild(details);
+              div.appendChild(collapsible);
+            }
 
           listDiv.appendChild(div);
         });
